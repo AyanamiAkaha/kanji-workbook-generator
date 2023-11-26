@@ -1,0 +1,22 @@
+python -m venv venv
+
+# Activate virtual environment
+# On Windows
+.\venv\Scripts\activate
+# On macOS/Linux
+source venv/bin/activate
+
+# Create requirements.txt
+echo "reportlab==3.6.2" > requirements.txt
+
+# Install packages
+pip install -r requirements.txttignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
