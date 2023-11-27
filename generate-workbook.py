@@ -4,62 +4,148 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.pagesizes import *
 from furigana.furigana import split_furigana
+import argparse
 
-def count_boxes(japanese_text, kanji_list):
-    count = 0
-    for char in japanese_text:
-        if char in kanji_list:
-            count += 1
-    return count
+class WorkbookGenerator:
+    def __init__(self, jp_fname, kanji_fname, output_fname, font_size=30, char_margin=2, page_size=A4, page_margin_x=50, page_margin_y=100):
+        self.page_size = page_size
+        self.page_margin_x = page_margin_x
+        self.page_margin_y = page_margin_y
+        self.box_size = font_size * 1.25
+        self.font_size = font_size
+        self.box_font_diff = (self.box_size - self.font_size) / 2
+        self.char_margin = char_margin
+        self.furigana_size = font_size / 3
+        self.paragraph_margin = self.furigana_size
+        pdfmetrics.registerFont(TTFont('Noto Sans JP', 'static/NotoSansJP-Regular.ttf'))
 
-def furigana_offset(japanese_text, kanji_list, font_size, box_size, margin):
-    total_chars = japanese_text.__len__()
-    boxes = count_boxes(japanese_text, kanji_list)
-    chars = total_chars - boxes
-    return (chars * font_size + boxes*(box_size + 2*margin))/2
+        self.page = 1
+        self.x = self.page_margin_x
+        self.y = self.page_size[1] - self.page_margin_y
 
-def create_workbook(japanese_text, kanji_list, output_file):
-    x, y = 50, 700
-    box_size = 40
-    font_size = 30;
-    box_font_diff = (box_size - font_size) / 2
-    margin = 2
-    furigana_size = 10
+        self.pdf = canvas.Canvas(output_fname, pagesize=self.page_size)
+        self.pdf.setFont('Noto Sans JP', self.font_size)
+        self.japanese_text = open(jp_fname, 'r').read()
+        self.kanji_list = open(kanji_fname, 'r').read()
 
-    pdfmetrics.registerFont(TTFont('Noto Sans JP', 'static/NotoSansJP-Regular.ttf'))
-    pdf = canvas.Canvas(output_file, pagesize=letter)
-    pdf.setFont('Noto Sans JP', font_size)
+    def count_boxes(self, text):
+        count = 0
+        for char in text:
+            if char in self.kanji_list:
+                count += 1
+        return count
 
-    tokenized = split_furigana(japanese_text)
+    def furigana_offset(self, text):
+        total_chars = text.__len__()
+        boxes = self.count_boxes(text)
+        chars = total_chars - boxes
+        return (chars * self.font_size + boxes*(self.box_size + 2*self.char_margin))/2
 
-    for pair in tokenized:
-        jp = pair[0]
+    def check_margins(self):
+        if self.x > self.page_size[0] - self.page_margin_x:
+            self.x = self.page_margin_x
+            self.y -= self.box_size + self.furigana_size + 3*self.char_margin
+        if self.y < self.page_margin_y:
+            self.pdf.showPage()
+            self.pdf.setFont('Noto Sans JP', self.font_size)
+            self.page += 1
+            self.x = self.page_margin_x
+            self.y = self.page_size[1] - self.page_margin_y
 
-        if pair.__len__() > 1 and count_boxes(jp, kanji_list) > 0:
-            pdf.setFont('Noto Sans JP', furigana_size)
-            pdf.drawCentredString(x + furigana_offset(pair[0], kanji_list, font_size, box_size, margin), y + font_size + box_font_diff + margin, pair[1])
-            pdf.setFont('Noto Sans JP', font_size)
+    def write_text(self, text):
+        tokenized = split_furigana(text)
+        for pair in tokenized:
+            jp = pair[0]
+            if pair.__len__() > 1 and self.count_boxes(jp) > 0:
+                self.pdf.setFont('Noto Sans JP', self.furigana_size)
+                furigana_y = self.y + self.font_size + self.box_font_diff + self.char_margin;
+                self.pdf.drawCentredString(self.x + self.furigana_offset(pair[0]), furigana_y, pair[1])
+                self.pdf.setFont('Noto Sans JP', self.font_size)
+            for char in jp:
+                if char in self.kanji_list:
+                    self.pdf.setFillColor(colors.white)
+                    self.pdf.rect(self.x + self.char_margin, self.y - self.box_font_diff - 1, self.box_size, self.box_size, fill=True, stroke=True)
+                    self.pdf.setFillColor(colors.black)
+                    self.x += self.box_size + self.char_margin
+                else:
+                    self.pdf.drawCentredString(self.x + self.box_size / 2, self.y, char)
+                    self.x += self.font_size + self.char_margin
+                self.check_margins()
+        
+    def create_workbook(self):
+        lines = self.japanese_text.split('\n')
+        for l in lines:
+            if l != '':
+                self.write_text(l)
+            self.x = self.page_margin_x
+            self.y -= self.box_size + self.furigana_size + 3*self.char_margin + self.paragraph_margin
+            self.check_margins()
+        self.pdf.save()
 
-        for char in jp:
-            if char in kanji_list:
-                pdf.setFillColor(colors.white)
-                pdf.rect(x + margin, y - box_font_diff - 1, box_size, box_size, fill=True, stroke=True)
-                pdf.setFillColor(colors.black)
-                x += box_size + margin
-            else:
-                pdf.drawCentredString(x + box_size / 2, y, char)
-                x += font_size + margin
+PAGE_SIZES = {
+    'A0': A0,
+    'A1': A1,
+    'A2': A2,
+    'A3': A3,
+    'A4': A4,
+    'A5': A5,
+    'A6': A6,
+    'A7': A7,
+    'A8': A8,
+    'A9': A9,
+    'A10': A10,
+    'B0': B0,
+    'B1': B1,
+    'B2': B2,
+    'B3': B3,
+    'B4': B4,
+    'B5': B5,
+    'B6': B6,
+    'B7': B7,
+    'B8': B8,
+    'B9': B9,
+    'B10': B10,
+    'C0': C0,
+    'C1': C1,
+    'C2': C2,
+    'C3': C3,
+    'C4': C4,
+    'C5': C5,
+    'C6': C6,
+    'C7': C7,
+    'C8': C8,
+    'C9': C9,
+    'C10': C10,
+    'LETTER': LETTER,
+    'LEGAL': LEGAL,
+    'ELEVENSEVENTEEN': ELEVENSEVENTEEN,
+    'JUNIOR_LEGAL': JUNIOR_LEGAL,
+    'HALF_LETTER': HALF_LETTER,
+    'GOV_LETTER': GOV_LETTER,
+    'GOV_LEGAL': GOV_LEGAL,
+    'TABLOID': TABLOID,
+    'LEDGER': LEDGER
+}
 
-            if x > 550:  # Move to the next line after reaching the end of the line
-                x = 50
-                y -= box_size + furigana_size + 3*margin
+def main():
+    parser = argparse.ArgumentParser(description='Generate a workbook for Japanese kanji practice.')
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0')
+    parser.add_argument('-j', '--japanese-text', metavar='japanese_text', type=str, help='file with japanese text to be used in the workbook', required=True)
+    parser.add_argument('-k', '--kanji-list', metavar='kanji_list', type=str, help='file with the list of kanji to be used in the workbook', required=True)
+    parser.add_argument('-o', '--output-file', metavar='output_file', type=str, help='Output file name', required=True)
+    parser.add_argument('--font-size', metavar='font_size', type=int, help='Font size', default=30)
+    parser.add_argument('--char-margin', metavar='char_margin', type=int, help='Character margin', default=2)
+    parser.add_argument('--page-size', metavar='page_size', type=str, help='Page size', default='A4', choices=PAGE_SIZES.keys())
+    parser.add_argument('--page-margin-x', metavar='page_margin_x', type=int, help='Page margin x', default=50)
+    parser.add_argument('--page-margin-y', metavar='page_margin_y', type=int, help='Page margin y', default=100)
+    args = parser.parse_args()
 
-    pdf.save()
+    page_size = PAGE_SIZES[args.page_size]
 
-# Example usage:
-japanese_text = "あさ、わたしは学校へいきます。友達と あそびます。ランチは おにぎりと みずです。学校のあと、図書館で ほんを よみます。かえりに、おかあさんが たべものを つくります。ねるとき、ねこと いっしょに ねます。たのしい いちにちでした。"
-kanji_list = ["校", "友", "館", "図", "書", "館", "母", "食", "寝", "猫", "一", "日"]
-output_file = "workbook.pdf"
+    generator = WorkbookGenerator(args.japanese_text, args.kanji_list, args.output_file, font_size=args.font_size, char_margin=args.char_margin, page_size=page_size, page_margin_x=args.page_margin_x, page_margin_y=args.page_margin_y)
+    generator.create_workbook()
 
-create_workbook(japanese_text, kanji_list, output_file)
+if __name__ == "__main__":
+    main()
