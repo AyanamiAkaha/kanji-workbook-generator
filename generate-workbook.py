@@ -10,6 +10,7 @@ import argparse
 
 class WorkbookGenerator:
     def __init__(self, jp_fname, kanji_fname, output_fname, font_size=30, char_margin=2, page_size=A4, page_margin_x=50, page_margin_y=100):
+        self.output_fname = output_fname
         self.page_size = page_size
         self.page_margin_x = page_margin_x
         self.page_margin_y = page_margin_y
@@ -21,14 +22,38 @@ class WorkbookGenerator:
         self.paragraph_margin = self.furigana_size
         pdfmetrics.registerFont(TTFont('Noto Sans JP', 'static/NotoSansJP-Regular.ttf'))
 
-        self.page = 1
         self.x = self.page_margin_x
         self.y = self.page_size[1] - self.page_margin_y
 
         self.pdf = canvas.Canvas(output_fname, pagesize=self.page_size)
-        self.pdf.setFont('Noto Sans JP', self.font_size)
         self.japanese_text = open(jp_fname, 'r').read()
+        if self.japanese_text[self.japanese_text.__len__() - 1] == '\n':
+            self.japanese_text = self.japanese_text[:-1]
         self.kanji_list = open(kanji_fname, 'r').read()
+        if self.kanji_list[self.kanji_list.__len__() - 1] == '\n':
+            self.kanji_list = self.kanji_list[:-1]
+
+        self.kanji_stats = {}
+        for char in self.kanji_list:
+            self.kanji_stats[char] = 0
+        for char in self.japanese_text:
+            if char in self.kanji_list:
+                self.kanji_stats[char] += 1
+        
+        self.kanji_count = 0
+        for count in self.kanji_stats.values():
+            if count > 0:
+                self.kanji_count += 1
+
+        self.start_page()
+    
+    def start_page(self):
+        self.pdf.setFont('Noto Sans JP', self.furigana_size)
+        self.pdf.drawString(self.page_margin_x, self.page_size[1] - self.page_margin_y/2, "%d of %d kanji" % (self.kanji_count, self.kanji_list.__len__()))
+        self.pdf.drawCentredString(self.page_size[0] - self.page_margin_x, self.page_margin_y/2, self.pdf.getPageNumber().__str__())
+        self.pdf.setFont('Noto Sans JP', self.font_size)
+        self.x = self.page_margin_x
+        self.y = self.page_size[1] - self.page_margin_y
 
     def count_boxes(self, text):
         count = 0
@@ -49,10 +74,7 @@ class WorkbookGenerator:
             self.y -= self.box_size + self.furigana_size + 3*self.char_margin
         if self.y < self.page_margin_y:
             self.pdf.showPage()
-            self.pdf.setFont('Noto Sans JP', self.font_size)
-            self.page += 1
-            self.x = self.page_margin_x
-            self.y = self.page_size[1] - self.page_margin_y
+            self.start_page()
 
     def write_text(self, text):
         tokenized = split_furigana(text)
@@ -76,13 +98,24 @@ class WorkbookGenerator:
         
     def create_workbook(self):
         lines = self.japanese_text.split('\n')
-        for l in lines:
+        for idx, l in enumerate(lines):
             if l != '':
                 self.write_text(l)
-            self.x = self.page_margin_x
-            self.y -= self.box_size + self.furigana_size + 3*self.char_margin + self.paragraph_margin
-            self.check_margins()
+            if idx <= lines.__len__() - 1:
+                self.x = self.page_margin_x
+                self.y -= self.box_size + self.furigana_size + 3*self.char_margin + self.paragraph_margin
+                self.check_margins()
         self.pdf.save()
+        missing_kanji = ""
+        print("Kanji stats:\n")
+        for kanji, count in sorted(self.kanji_stats.items(), key=lambda x: x[1], reverse=True):
+            if count == 0:
+                missing_kanji += kanji
+            else:
+                print("%s: %d" % (kanji, count))
+        print("\nMissing kanji: %d" % missing_kanji.__len__())
+        print(missing_kanji)
+        print("\nWorkbook saved to %s" % self.output_fname)
 
 PAGE_SIZES = {
     'A0': A0,
