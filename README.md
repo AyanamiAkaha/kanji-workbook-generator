@@ -49,3 +49,9 @@ optional arguments:
   --page-margin-y page_margin_y
                         Page margin y
 ```
+
+# known issues
+
+- It seems furigana module does not handle jinmeiyou kanji correctly. For
+example texts with 也 will crash the application. This requires a fix
+upstream (I'll create a PR in the future when/if I have time)
