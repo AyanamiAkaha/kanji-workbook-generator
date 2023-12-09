@@ -1,12 +1,30 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import *
-from furigana.furigana import split_furigana
-import argparse
+import MeCab
+import jaconv
+
+def split_furigana(text):
+    mecab = MeCab.Tagger("-Ochasen")
+    mecab.parse('')
+    node = mecab.parseToNode(text)
+    parsed = []
+    while node:
+        surface = node.surface
+        features = node.feature.split(",")
+        furigana = "" # in case there's no furigana
+        if len(features) > 7:
+            furigana = jaconv.kata2hira(features[7])
+        parsed.append((surface, furigana))
+        node = node.next
+    return parsed
 
 class WorkbookGenerator:
     def __init__(self, jp_fname, kanji_fname, output_fname, font_size=30, char_margin=2, page_size=A4, page_margin_x=50, page_margin_y=100):
