@@ -27,7 +27,7 @@ def split_furigana(text):
     return parsed
 
 class WorkbookGenerator:
-    def __init__(self, jp_fname, kanji_fname, output_fname, font_size=30, char_margin=2, page_size=A4, page_margin_x=50, page_margin_y=100):
+    def __init__(self, jp_fname, kanji_fname, output_fname, font_size=14, char_margin=2, page_size=A4, page_margin_x=50, page_margin_y=50):
         self.output_fname = output_fname
         self.page_size = page_size
         self.page_margin_x = page_margin_x
@@ -57,14 +57,14 @@ class WorkbookGenerator:
         for char in self.japanese_text:
             if char in self.kanji_list:
                 self.kanji_stats[char] += 1
-        
+
         self.kanji_count = 0
         for count in self.kanji_stats.values():
             if count > 0:
                 self.kanji_count += 1
 
         self.start_page()
-    
+
     def start_page(self):
         self.pdf.setFont('Noto Sans JP', self.furigana_size)
         self.pdf.drawString(self.page_margin_x, self.page_size[1] - self.page_margin_y/2, "%d of %d kanji" % (self.kanji_count, self.kanji_list.__len__()))
@@ -113,7 +113,7 @@ class WorkbookGenerator:
                     self.pdf.drawCentredString(self.x + self.box_size / 2, self.y, char)
                     self.x += self.font_size + self.char_margin
                 self.check_margins()
-        
+
     def create_workbook(self):
         lines = self.japanese_text.split('\n')
         for idx, l in enumerate(lines):
