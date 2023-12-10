@@ -20,4 +20,8 @@ __pycache__/
 
 # Virtual Environment
 venv/
+
+# non-code
 text-sources/
+kanji-lists/
+!kanji-lists/G[0-9]*.txt
