@@ -186,11 +186,11 @@ def main():
     parser.add_argument('-j', '--japanese-text', metavar='japanese_text', type=str, help='file with japanese text to be used in the workbook', required=True)
     parser.add_argument('-k', '--kanji-list', metavar='kanji_list', type=str, help='file with the list of kanji to be used in the workbook', required=True)
     parser.add_argument('-o', '--output-file', metavar='output_file', type=str, help='Output file name', required=True)
-    parser.add_argument('--font-size', metavar='font_size', type=int, help='Font size', default=30)
+    parser.add_argument('--font-size', metavar='font_size', type=int, help='Font size', default=14)
     parser.add_argument('--char-margin', metavar='char_margin', type=int, help='Character margin', default=2)
     parser.add_argument('--page-size', metavar='page_size', type=str, help='Page size', default='A4', choices=PAGE_SIZES.keys())
     parser.add_argument('--page-margin-x', metavar='page_margin_x', type=int, help='Page margin x', default=50)
-    parser.add_argument('--page-margin-y', metavar='page_margin_y', type=int, help='Page margin y', default=100)
+    parser.add_argument('--page-margin-y', metavar='page_margin_y', type=int, help='Page margin y', default=50)
     args = parser.parse_args()
 
     page_size = PAGE_SIZES[args.page_size]
