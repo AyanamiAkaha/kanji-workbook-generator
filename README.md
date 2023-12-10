@@ -52,6 +52,5 @@ optional arguments:
 
 # known issues
 
-- It seems furigana module does not handle jinmeiyou kanji correctly. For
-example texts with 也 will crash the application. This requires a fix
-upstream (I'll create a PR in the future when/if I have time)
+- ~~It seems furigana module does not handle jinmeiyou kanji correctly. For
+example texts with 也 will crash the application.~~ (fixed)
