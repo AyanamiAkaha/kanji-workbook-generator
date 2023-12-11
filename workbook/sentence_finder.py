@@ -9,7 +9,7 @@ class SentenceFinder:
     """
     Finds sentences for each kanji from the list in given text.
     """
-    def __init__(self, text, kanji_list):
+    def __init__(self, text, kanji_list, limit=10):
         self.mecab = MeCab.Tagger("-Owakati")
         self.kanji_list = kanji_list
         self.text = text
@@ -17,6 +17,7 @@ class SentenceFinder:
         self.sentences = []
         self.word_counts = {ch: 0 for ch in kanji_list}
         self.words = []
+        self.limit = limit
 
     def find_words(self):
         """
@@ -25,6 +26,8 @@ class SentenceFinder:
         for word in self.mecab.parse(self.text).split():
             found = False
             for kanji in self.kanji_list:
+                if self.word_counts[kanji] > self.limit:
+                    continue
                 if kanji in word:
                     self.word_counts[kanji] += 1
                     found = True
@@ -41,7 +44,7 @@ class SentenceFinder:
             if re.compile("[。.\n\r]").match(sentence):
                 continue
             for kanji in self.kanji_list:
-                if self.sentence_counts[kanji] > 10:
+                if self.sentence_counts[kanji] > self.limit:
                     continue
                 if kanji in sentence:
                     self.sentence_counts[kanji] += 1
