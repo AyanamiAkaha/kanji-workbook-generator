@@ -34,7 +34,7 @@ def main():
     if args.sentences:
         parser = SentenceFinder(text, kanji_list, limit=args.limit)
         parser.find_sentences()
-        text = '\n'.join(parser.sentences)
+        text = '\n'.join(map(lambda v: "　%d.　%s" % (v[0], v[1]), enumerate(parser.sentences)))
     elif args.words:
         parser = SentenceFinder(text, kanji_list, limit=args.limit)
         parser.find_words()
