@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import math
-import argparse
+from enum import Enum
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -11,7 +11,10 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import *
 
 from .utils import split_furigana, strip_white
-from .sentence_finder import SentenceFinder
+
+class WorkbookMode(Enum):
+    EXERCISES = 1
+    ANSWERS = 2
 
 class WorkbookGenerator:
     def __init__(
@@ -25,6 +28,7 @@ class WorkbookGenerator:
             page_margin_x: int = 50,
             page_margin_y: int = 50,
             limit: int = math.inf,
+            mode: WorkbookMode = WorkbookMode.EXERCISES,
     ) -> None:
         self.japanese_text = text
         self.kanji_list = strip_white(kanji_list)
@@ -39,6 +43,7 @@ class WorkbookGenerator:
         self.char_margin = char_margin
         self.furigana_size = font_size / 3
         self.paragraph_margin = self.furigana_size
+        self.mode = mode
         pdfmetrics.registerFont(TTFont('Noto Sans JP', 'static/NotoSansJP-Regular.ttf'))
 
         self.x = self.page_margin_x
@@ -102,11 +107,17 @@ class WorkbookGenerator:
                 self.pdf.setFont('Noto Sans JP', self.font_size)
             for char in jp:
                 if self.need_kanji(char):
-                    self.pdf.setFillColor(colors.white)
-                    self.pdf.rect(self.x + self.char_margin, self.y - self.box_font_diff - 1, self.box_size, self.box_size, fill=True, stroke=True)
-                    self.pdf.setFillColor(colors.black)
-                    self.x += self.box_size + self.char_margin
-                    self.kanji_counts[char] += 1
+                    if self.mode == WorkbookMode.EXERCISES:
+                        self.pdf.setFillColor(colors.white)
+                        self.pdf.rect(self.x + self.char_margin, self.y - self.box_font_diff - 1, self.box_size, self.box_size, fill=True, stroke=True)
+                        self.pdf.setFillColor(colors.black)
+                        self.x += self.box_size + self.char_margin
+                        self.kanji_counts[char] += 1
+                    else:
+                        self.pdf.setFillColor(colors.red)
+                        self.pdf.drawCentredString(self.x + self.box_size / 2, self.y, char)
+                        self.x += self.box_size + self.char_margin
+                        self.pdf.setFillColor(colors.black)
                 else:
                     self.pdf.drawCentredString(self.x + self.box_size / 2, self.y, char)
                     self.x += self.font_size + self.char_margin

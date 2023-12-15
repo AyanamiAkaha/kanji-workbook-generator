@@ -4,7 +4,7 @@
 import argparse
 import math
 
-from workbook import WorkbookGenerator, SentenceFinder, PAGE_SIZES
+from workbook import WorkbookGenerator, SentenceFinder, WorkbookMode, PAGE_SIZES
 
 def main():
     parser = argparse.ArgumentParser(description='Generate a workbook for Japanese kanji practice.')
@@ -58,6 +58,20 @@ def main():
         limit=args.limit,
     )
     generator.create_workbook()
+    answers_fname = args.output_file.replace('.pdf', '_answers.pdf')
+    answers = WorkbookGenerator(
+        text,
+        kanji_list,
+        answers_fname,
+        font_size=args.font_size,
+        char_margin=args.char_margin,
+        page_size=page_size,
+        page_margin_x=args.page_margin_x,
+        page_margin_y=args.page_margin_y,
+        limit=args.limit,
+        mode=WorkbookMode.ANSWERS,
+    )
+    answers.create_workbook()
 
 if __name__ == "__main__":
     main()

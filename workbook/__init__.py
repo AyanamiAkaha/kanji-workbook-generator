@@ -1,7 +1,7 @@
 
 from reportlab.lib.pagesizes import *
 
-from .workbook_generator import WorkbookGenerator
+from .workbook_generator import WorkbookGenerator, WorkbookMode
 from .sentence_finder import SentenceFinder
 
 PAGE_SIZES = {
