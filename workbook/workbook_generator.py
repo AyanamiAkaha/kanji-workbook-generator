@@ -10,7 +10,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import *
 
-from .utils import split_furigana
+from .utils import split_furigana, strip_white
 from .sentence_finder import SentenceFinder
 
 class WorkbookGenerator:
@@ -27,7 +27,7 @@ class WorkbookGenerator:
             limit: int = math.inf,
     ) -> None:
         self.japanese_text = text
-        self.kanji_list = kanji_list
+        self.kanji_list = strip_white(kanji_list)
         self.limit = limit
         self.output_fname = output_fname
         self.page_size = page_size
@@ -70,7 +70,7 @@ class WorkbookGenerator:
     def count_boxes(self, text: str) -> int:
         count = 0
         for char in text:
-            if char in self.kanji_list:
+            if self.need_kanji(char):
                 count += 1
         return count
 

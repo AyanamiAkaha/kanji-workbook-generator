@@ -1,29 +1,37 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import re
+import random
 
 import argparse
 import MeCab
+
+from .utils import strip_white
 
 class SentenceFinder:
     """
     Finds sentences for each kanji from the list in given text.
     """
-    def __init__(self, text, kanji_list, limit=10):
+    def __init__(self, text, kanji_list, limit=10, randomize=False):
         self.mecab = MeCab.Tagger("-Owakati")
-        self.kanji_list = kanji_list
+        self.kanji_list = strip_white(kanji_list)
         self.text = text
         self.sentence_counts = {ch: 0 for ch in kanji_list}
         self.sentences = []
         self.word_counts = {ch: 0 for ch in kanji_list}
         self.words = []
         self.limit = limit
+        self.randomize = randomize
 
     def find_words(self):
         """
         Finds words for each kanji from the list in given text.
         """
-        for word in self.mecab.parse(self.text).split():
+        text = self.mecab.parse(self.text).split()
+        if self.randomize:
+            random.shuffle(text)
+        for word in text:
             found = False
             for kanji in self.kanji_list:
                 if self.word_counts[kanji] > self.limit:
@@ -39,10 +47,11 @@ class SentenceFinder:
         Finds sentences for each kanji from the list in given text.
         """
         regex = re.compile("[^。.\n\r]*[。.\n\r]")
-        for sentence in regex.findall(self.text):
+        sentences = list(filter(lambda s: not re.compile("[。.\n\r]").match(s), regex.findall(self.text)))
+        if self.randomize:
+            random.shuffle(sentences)
+        for sentence in sentences:
             found = False
-            if re.compile("[。.\n\r]").match(sentence):
-                continue
             for kanji in self.kanji_list:
                 if self.sentence_counts[kanji] > self.limit:
                     continue

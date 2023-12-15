@@ -21,7 +21,11 @@ def main():
     mode = parser.add_mutually_exclusive_group(required=False)
     mode.add_argument('--sentences', action='store_true', help='Use sentences instead of words')
     mode.add_argument('--words', action='store_true', help='Use words instead of sentences')
+    parser.add_argument('--randomize', action='store_true', help='Randomize sentences or words')
     args = parser.parse_args()
+
+    if args.randomize and not (args.sentences or args.words):
+        parser.error('Randomize is supported only for sentences or words')
     
     kanji_list = open(args.kanji_list, 'r').read()
     if kanji_list[kanji_list.__len__() - 1] == '\n':
@@ -32,7 +36,7 @@ def main():
         text = text[:-1]
 
     if args.sentences:
-        parser = SentenceFinder(text, kanji_list, limit=args.limit)
+        parser = SentenceFinder(text, kanji_list, limit=args.limit, randomize=args.randomize)
         parser.find_sentences()
         text = '\n'.join(map(lambda v: "　%d.　%s" % (v[0], v[1]), enumerate(parser.sentences)))
     elif args.words:
